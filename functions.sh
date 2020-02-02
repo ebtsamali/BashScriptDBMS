@@ -28,4 +28,8 @@ function dropDB {
     fi
 }
 
+function listDBs {
+    ls /bashDBMS/databases;
+}
+
 dropDB;
