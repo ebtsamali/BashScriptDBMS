@@ -14,3 +14,18 @@ function createDB {
     
 }
 
+function dropDB {
+    echo "Insert database name to delete: ";
+    read name;
+
+    if [ -d "/bashDBMS/databases/$name" ]
+    then
+        cd /bashDBMS/databases;
+        rm -r $name;
+        echo "database dropped successfuly";
+    else
+        echo "database does not exist";
+    fi
+}
+
+dropDB;
