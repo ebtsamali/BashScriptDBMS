@@ -29,7 +29,10 @@ function dropDB {
 }
 
 function listDBs {
-    ls /bashDBMS/databases;
+    if [ "$(ls -A /bashDBMS/databases)" ]
+    then
+        ls /bashDBMS/databases;
+    else
+        echo "No databases available";
+    fi
 }
-
-dropDB;
