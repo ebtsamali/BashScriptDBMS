@@ -8,16 +8,16 @@ function createDB {
 		then
 			echo "database already created";
 		else
-			mkdir -p ./bashDBMS/databases/$name;
+			mkdir -p /bashDBMS/databases/$name;
 		echo "database create successfully";
     	fi
     
 }
 
 function dropDB {
-	if [ -d "bashDBMS/databases/$DBname" ]
+	if [ -d "/bashDBMS/databases/$DBname" ]
 	then
-	   cd bashDBMS/databases;
+	   cd /bashDBMS/databases;
 	   rm -r $DBname;
 	   echo "database dropped successfuly";
 	   else
@@ -28,9 +28,9 @@ function dropDB {
 }
 
 function listDBs {
-    if [ "$(ls -A bashDBMS/databases)" ]
+    if [ "$(ls -A /bashDBMS/databases)" ]
     then
-	cd bashDBMS/databases
+	cd /bashDBMS/databases
         ls .
 	echo "choose database : "
 	read DBname
@@ -41,7 +41,7 @@ function listDBs {
 }
 
 function dropTable {
-	cd bashDBMS/databases/$DBname
+	cd /bashDBMS/databases/$DBname
 	ls *data . | cut -d. -f1
 	echo "choose table name : "
 	read tableName
@@ -52,13 +52,38 @@ function dropTable {
 }
 
 function renameDB {
-	cd bashDBMS/databases
+	cd /bashDBMS/databases
 	echo "Enter new name : "
 	read newName 
 	mv ./$DBname ./$newName
 	cd ../..
 	echo "Database renamed successfuly"
 	mainList
+}
+
+function createTable {
+    echo "Insert table name: ";
+    read name;
+
+    file=/bashDBMS/databases/$DBname/$name.data;
+
+    if [ -f $file ]
+    then
+        echo "Table is already created!";
+    else       
+        touch $file;
+
+        echo "Insert number of table columns: ";
+        read number;
+        
+        for (( i=1; i<=$number; i++ ))
+        do
+            echo "Insert $i column: ";
+            read cols[$i-1];
+        done
+
+        echo ${cols[*]} >> $file;
+    fi
 }
 
 function useDB {
@@ -72,6 +97,7 @@ function useDB {
 		break;;
 
 		Create)	
+            createTable;
 		break;;
 
 		Insert)	
@@ -136,5 +162,4 @@ function mainList {
 }
 
 mainList
-
 
