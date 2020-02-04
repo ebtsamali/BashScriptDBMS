@@ -34,6 +34,8 @@ function listDBs {
     then
 	cd bashDBMS/databases
         ls .
+	echo "choose database : "
+	read DBname
     else
         echo "No databases available";
     fi
@@ -46,6 +48,16 @@ function DBlist {
 	echo "choose database : "
 	read DBname
 	cd ../..
+}
+
+function dropTable {
+	cd bashDBMS/databases/$DBname
+	ls *data . | cut -d. -f1
+	echo "choose table name : "
+	read tableName
+	rm $tableName*
+	cd ../../..
+	echo "$tableName was removed"
 }
 
 function useDB {
@@ -71,12 +83,7 @@ function useDB {
 		break;;
 
 		Drop)
-			cd $DBname
-			ls *data | cut -d. -f1
-			echo "choose table name : "
-			read tableName
-			rm ./$DBname/$tableName*
-			cd ..
+		  dropTable	
 		break;;
 	
 		Return)	
@@ -107,9 +114,11 @@ function mainList {
 
 			Rename-DB)
 			  listDBs
+			  cd bashDBMS/databases
 			  echo "Enter new name : "
 			  read newName 
 			  mv ./$DBname ./$newName
+			  cd ../..
 			break;;
 
 			Drop-DB)
