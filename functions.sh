@@ -14,6 +14,16 @@ function createDB {
     
 }
 
+function renameDB {
+	cd bashDBMS/databases
+	echo "Enter new name : "
+	read newName 
+	mv ./$DBname ./$newName
+	cd ../..
+	echo "Database renamed successfuly"
+	mainList
+}
+
 function dropDB {
 	if [ -d "bashDBMS/databases/$DBname" ]
 	then
@@ -40,25 +50,45 @@ function listDBs {
     cd ../..
 }
 
+function createMetaDataTable {
+	echo "Enter table name : "
+	read newTableName
+	
+	cd bashDBMS/databases/$DBname
+
+	if [ -e ${newTableName}.metaData ]; then
+	    echo "table already created";
+	    cd ../../..
+	else 
+	    touch ${newTableName}.metaData
+	    echo "table created successfully"
+
+	    echo "Number of column : "
+	    read columnNumber
+
+	    for ((i = 0; i<${columnNumber}; ++i))
+	    do
+		echo "Enter name and type of column $i : "
+		read col
+		colType=$(cut -f2 "$col") 
+		echo $colType
+	    done
+	    cd ../../..
+	fi
+
+	useDB
+}
+
 function dropTable {
 	cd bashDBMS/databases/$DBname
-	ls *data . | cut -d. -f1
+	echo $DBname
+	ls *data | cut -d"." -f1
 	echo "choose table name : "
 	read tableName
 	rm $tableName*
 	cd ../../..
 	echo "$tableName removed successfuly"
 	useDB
-}
-
-function renameDB {
-	cd bashDBMS/databases
-	echo "Enter new name : "
-	read newName 
-	mv ./$DBname ./$newName
-	cd ../..
-	echo "Database renamed successfuly"
-	mainList
 }
 
 function useDB {
@@ -71,7 +101,8 @@ function useDB {
 		Select)	
 		break;;
 
-		Create)	
+		Create)
+		   createMetaDataTable	
 		break;;
 
 		Insert)	
