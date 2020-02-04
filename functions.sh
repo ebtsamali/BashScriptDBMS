@@ -15,18 +15,16 @@ function createDB {
 }
 
 function dropDB {
-    echo "Insert database name to delete: ";
-    read name;
-
-    if [ -d "bashDBMS/databases/$name" ]
-    then
-        cd bashDBMS/databases;
-        rm -r $name;
-        echo "database dropped successfuly";
-    else
-        echo "database does not exist";
-    fi
-    cd ../..
+	if [ -d "bashDBMS/databases/$DBname" ]
+	then
+	   cd bashDBMS/databases;
+	   rm -r $DBname;
+	   echo "database dropped successfuly";
+	   else
+	   echo "database does not exist";
+	fi
+	cd ../..
+	mainList
 }
 
 function listDBs {
@@ -42,14 +40,6 @@ function listDBs {
     cd ../..
 }
 
-function DBlist {
-	cd /bashDBMS/databases
-	for i in $(ls -d */); do echo ${i%%/}; done
-	echo "choose database : "
-	read DBname
-	cd ../..
-}
-
 function dropTable {
 	cd bashDBMS/databases/$DBname
 	ls *data . | cut -d. -f1
@@ -57,7 +47,18 @@ function dropTable {
 	read tableName
 	rm $tableName*
 	cd ../../..
-	echo "$tableName was removed"
+	echo "$tableName removed successfuly"
+	useDB
+}
+
+function renameDB {
+	cd bashDBMS/databases
+	echo "Enter new name : "
+	read newName 
+	mv ./$DBname ./$newName
+	cd ../..
+	echo "Database renamed successfuly"
+	mainList
 }
 
 function useDB {
@@ -114,11 +115,7 @@ function mainList {
 
 			Rename-DB)
 			  listDBs
-			  cd bashDBMS/databases
-			  echo "Enter new name : "
-			  read newName 
-			  mv ./$DBname ./$newName
-			  cd ../..
+			  renameDB
 			break;;
 
 			Drop-DB)
