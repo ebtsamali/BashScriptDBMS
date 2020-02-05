@@ -81,7 +81,6 @@ function createMetaDataTable {
 
 					else printf ${colType}"|" >> ${newTableName}.metaData
 				fi
-
 		      		
 		    	fi
 		done
@@ -90,6 +89,38 @@ function createMetaDataTable {
 	    cd ../../..
 	fi
 
+	useDB
+}
+
+function updateTable {
+	cd bashDBMS/databases/$DBname
+	printf "write update command by using id condition : "	
+	read update tableName Set colName equal newValue where Id equal idNum
+	if [[ $update == "update" && $Set == "set" && $equal == "=" && $where == "where" && $Id == "id" ]]
+	then 
+		tablesNameArr=($(ls *data | cut -d"." -f1))
+		
+		for (( j=0; j<${#tablesNameArr[@]}; j++ ))
+		do
+			if [[ ${tablesNameArr[$j]} == $tableName ]]
+			then
+				typeset -i ID=$Id
+				if [[ ("$(sed -n "1{/$colName/p};q" ${tableName}.data)")  &&  ("$(sed -n "/^$Id/p" ${tableName}.data)") ]]
+                   		then
+			 		echo "colName exists"
+				fi
+			fi
+		done
+
+		if [[ ! " ${tablesNameArr[@]} " =~ " ${tableName} " ]]; then
+    			echo "ERROR, $tableName table does not exist in database"
+		fi
+		
+	else 
+		echo "ERROR, write valid command"
+	fi
+
+	cd ../../..
 	useDB
 }
 
@@ -122,7 +153,8 @@ function useDB {
 		Insert)	
 		break;;
 	
-		Update)	
+		Update)
+		   updateTable	
 		break;;
 
 		Delete)	
