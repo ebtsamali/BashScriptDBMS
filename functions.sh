@@ -103,9 +103,9 @@ function renameDB {
 
 function createTable {
     echo "Insert table name: ";
-    read name;
+    read table;
 
-    file=/bashDBMS/databases/$DBname/$name.data;
+    file=/bashDBMS/databases/$DBname/$table.data;
 
     if [ -f $file ]
     then
@@ -122,8 +122,35 @@ function createTable {
             read cols[$i-1];
         done
 
-        echo ${cols[*]} >> $file;
+		
+        for (( i=1; i<=$number; i++ ))
+        do
+			if [ $i -eq ${#cols[@]} ]
+			then
+				echo -n ${cols[$i-1]} >> $file;
+			else
+            	echo -n ${cols[$i-1]}"|" >> $file;
+			fi
+        done
     fi
+}
+
+function insert {
+	echo "Write your insert query: ";
+	read command into table values array;
+
+	file=/bashDBMS/databases/$DBname/$table.data;
+
+	if [ $command = 'insert' ] && [ $into = 'into' ] && [ $values = 'values' ]
+	then
+		for (( x=1; x<=${#array[@]}; x++ ))
+        do
+			printf "%s\n" "${array[$x-1]}"
+        done
+	else
+		echo "Syntax error!";
+		insert;
+	fi
 }
 
 function useDB {
@@ -142,6 +169,7 @@ function useDB {
 		break;;
 
 		Insert)	
+			insert;
 		break;;
 	
 		Update)	
