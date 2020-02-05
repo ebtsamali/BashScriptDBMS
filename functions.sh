@@ -51,6 +51,7 @@ function listDBs {
 }
 
 function createMetaDataTable {
+	typeArr=(int double decimal float bigint boolean date time datetime timestamp varchar text char)
 	echo "Enter table name : "
 	read newTableName
 	
@@ -66,12 +67,25 @@ function createMetaDataTable {
 	    echo "Number of column : "
 	    read columnNumber
 
-	    for ((i = 0; i<${columnNumber}; ++i))
+	    for (( i = 0; i<${columnNumber}; i++ ))
 	    do
 		echo "Enter name and type of column $i : "
-		read col
-		colType=$(cut -f2 "$col") 
-		echo $colType
+		read colName colType
+		for (( j=0; j<${#typeArr[@]}; j++ ))
+		do
+		    	if [[ ${typeArr[$j]} == $colType ]]
+		    	then
+				if [[ $i == $(expr $columnNumber - 1) ]]
+				then
+					printf ${colType} >> ${newTableName}.metaData
+
+					else printf ${colType}"|" >> ${newTableName}.metaData
+				fi
+
+		      		
+		    	fi
+		done
+
 	    done
 	    cd ../../..
 	fi
