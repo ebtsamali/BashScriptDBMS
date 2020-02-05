@@ -8,7 +8,7 @@ function createDB {
 		then
 			echo "database already created";
 		else
-			mkdir -p ./bashDBMS/databases/$name;
+			mkdir -p /bashDBMS/databases/$name;
 		echo "database create successfully";
     	fi
     
@@ -25,9 +25,9 @@ function renameDB {
 }
 
 function dropDB {
-	if [ -d "bashDBMS/databases/$DBname" ]
+	if [ -d "/bashDBMS/databases/$DBname" ]
 	then
-	   cd bashDBMS/databases;
+	   cd /bashDBMS/databases;
 	   rm -r $DBname;
 	   echo "database dropped successfuly";
 	   else
@@ -38,9 +38,9 @@ function dropDB {
 }
 
 function listDBs {
-    if [ "$(ls -A bashDBMS/databases)" ]
+    if [ "$(ls -A /bashDBMS/databases)" ]
     then
-	cd bashDBMS/databases
+	cd /bashDBMS/databases
         ls .
 	echo "choose database : "
 	read DBname
@@ -136,6 +136,41 @@ function dropTable {
 	useDB
 }
 
+function renameDB {
+	cd /bashDBMS/databases
+	echo "Enter new name : "
+	read newName 
+	mv ./$DBname ./$newName
+	cd ../..
+	echo "Database renamed successfuly"
+	mainList
+}
+
+function createTable {
+    echo "Insert table name: ";
+    read name;
+
+    file=/bashDBMS/databases/$DBname/$name.data;
+
+    if [ -f $file ]
+    then
+        echo "Table is already created!";
+    else       
+        touch $file;
+
+        echo "Insert number of table columns: ";
+        read number;
+        
+        for (( i=1; i<=$number; i++ ))
+        do
+            echo "Insert $i column: ";
+            read cols[$i-1];
+        done
+
+        echo ${cols[*]} >> $file;
+    fi
+}
+
 function useDB {
 	select choice in List Select Create Insert Update Delete Drop Return Exit
 	do
@@ -146,8 +181,9 @@ function useDB {
 		Select)	
 		break;;
 
-		Create)
-		   createMetaDataTable	
+		Create)	
+            createTable;
+            createMetaDataTable;
 		break;;
 
 		Insert)	
@@ -213,5 +249,4 @@ function mainList {
 }
 
 mainList
-
 
