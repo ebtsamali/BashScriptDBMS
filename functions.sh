@@ -8,7 +8,7 @@ function createDB {
 		then
 			echo "database already created";
 		else
-			mkdir -p /bashDBMS/databases/$name;
+			mkdir -p ./bashDBMS/databases/$name;
 		echo "database create successfully";
     	fi
     
@@ -25,9 +25,9 @@ function renameDB {
 }
 
 function dropDB {
-	if [ -d "/bashDBMS/databases/$DBname" ]
+	if [ -d "bashDBMS/databases/$DBname" ]
 	then
-	   cd /bashDBMS/databases;
+	   cd bashDBMS/databases;
 	   rm -r $DBname;
 	   echo "database dropped successfuly";
 	   else
@@ -38,9 +38,9 @@ function dropDB {
 }
 
 function listDBs {
-    if [ "$(ls -A /bashDBMS/databases)" ]
+    if [ "$(ls -A bashDBMS/databases)" ]
     then
-	cd /bashDBMS/databases
+	cd bashDBMS/databases
         ls .
 	echo "choose database : "
 	read DBname
@@ -92,6 +92,47 @@ function createMetaDataTable {
 	useDB
 }
 
+function validateType {
+	firstLineMetadata=$(head -n 1 $1.metaData) 
+	IFS='|' read -r -a firstLineMetadataArr <<< "$firstLineMetadata"
+
+	firstLineData=$(head -n 1 $1.data) 
+	IFS='|' read -r -a firstLineDataArr <<< "$firstLineData"
+
+	if [[ $3 =~ ^[+-]?[0-9]+$ ]]; then
+	type=int
+
+	elif [[ $3 =~ ^[+-]?[0-9]+\.$ ]]; then
+	type=string
+
+	elif [[ $3 =~ ^[+-]?[0-9]+\.?[0-9]*$ ]]; then
+	type=float
+
+	else
+	type=string
+	fi
+
+	for index in "${!firstLineDataArr[@]}"
+	do
+	    if [ $2 == ${firstLineDataArr[$index]} ]
+	    then
+		
+		echo ${firstLineDataArr[$index]} $2
+		if [[ $type == ${firstLineMetadataArr[$index]} ]]
+		echo $type ${firstLineMetadataArr[$index]}
+		then
+		    echo "true"
+		    validateRes=1
+		else 
+		    echo "false"
+		    validateRes=0
+		fi
+	    fi
+	done
+	echo "res = $validateRes"
+	return $validateRes
+}
+
 function updateTable {
 	cd bashDBMS/databases/$DBname
 	printf "write update command by using id condition : "	
@@ -104,10 +145,16 @@ function updateTable {
 		do
 			if [[ ${tablesNameArr[$j]} == $tableName ]]
 			then
-				typeset -i ID=$Id
-				if [[ ("$(sed -n "1{/$colName/p};q" ${tableName}.data)")  &&  ("$(sed -n "/^$Id/p" ${tableName}.data)") ]]
+				if [[ ("$(sed -n "1{/$colName/p};q" ${tableName}.data)")  &&  ("$(sed -n "/^$idNum/p" ${tableName}.data)") ]]
                    		then
-			 		echo "colName exists"
+					validateType $tableName $colName $newValue 
+			 		if [ $? == 1 ] 
+					then 
+					    echo "yes"
+					else 
+					    echo "ERROR, input value is invalid"
+					fi
+				else echo "ERROR, $colName not exist or invalid id"
 				fi
 			fi
 		done
@@ -136,41 +183,6 @@ function dropTable {
 	useDB
 }
 
-function renameDB {
-	cd /bashDBMS/databases
-	echo "Enter new name : "
-	read newName 
-	mv ./$DBname ./$newName
-	cd ../..
-	echo "Database renamed successfuly"
-	mainList
-}
-
-function createTable {
-    echo "Insert table name: ";
-    read name;
-
-    file=/bashDBMS/databases/$DBname/$name.data;
-
-    if [ -f $file ]
-    then
-        echo "Table is already created!";
-    else       
-        touch $file;
-
-        echo "Insert number of table columns: ";
-        read number;
-        
-        for (( i=1; i<=$number; i++ ))
-        do
-            echo "Insert $i column: ";
-            read cols[$i-1];
-        done
-
-        echo ${cols[*]} >> $file;
-    fi
-}
-
 function useDB {
 	select choice in List Select Create Insert Update Delete Drop Return Exit
 	do
@@ -181,9 +193,8 @@ function useDB {
 		Select)	
 		break;;
 
-		Create)	
-            createTable;
-            createMetaDataTable;
+		Create)
+		   createMetaDataTable	
 		break;;
 
 		Insert)	
@@ -197,13 +208,15 @@ function useDB {
 		break;;
 
 		Drop)
-		  dropTable	
+		   dropTable	
 		break;;
 	
 		Return)	
+		   mainList
 		break;;
 
-		Exit)	
+		Exit)
+		   exit	
 		break;;
 	   esac
 	done
@@ -249,4 +262,5 @@ function mainList {
 }
 
 mainList
+
 
