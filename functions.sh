@@ -152,7 +152,7 @@ function updateTable {
 			if [[ ${tablesNameArr[$j]} == $tableName ]]
 			then
 				if [[ ("$(sed -n "1{/$colName/p};q" ${tableName}.data)")  &&  ("$(sed -n "/^$idNum/p" ${tableName}.data)") ]]
-                   		then
+                then
 				    validateType $tableName $colName $newValue $idNum
 				else 
 			   	    echo "ERROR, $colName not exist or invalid id"
@@ -171,6 +171,41 @@ function updateTable {
 	cd ../../..
 	useDB
 }
+
+function deleteRow {
+    cd bashDBMS/databases/$DBname
+	printf "write delete command by using id condition : "	
+	read delete from tableName where Id equal idNum
+	if [[ $delete == "delete" && $from == "from" && $equal == "=" && $where == "where" && $Id == "id" ]]
+	then 
+        tablesNameArr=($(ls *data | cut -d"." -f1))
+		
+		for (( j=0; j<${#tablesNameArr[@]}; j++ ))
+		do
+			if [[ ${tablesNameArr[$j]} == $tableName ]]
+			then                
+                if [[ "$(sed -n "/^$idNum/p" ${tableName}.data)" ]]
+                then
+                    sed -i "/^${idNum}|/d" ${tableName}.data 
+                    echo "one row deleted successfully"
+				else 
+			   	    echo "ERROR, invalid id"
+				fi
+            fi
+		done
+
+		if [[ ! " ${tablesNameArr[@]} " =~ " ${tableName} " ]]; then
+    			echo "ERROR, $tableName table does not exist in database"
+		fi
+
+    else 
+		echo "ERROR, write valid command"
+	fi
+
+	cd ../../..
+	useDB
+}
+
 
 function dropTable {
 	cd bashDBMS/databases/$DBname
@@ -269,6 +304,7 @@ function useDB {
 		break;;
 
 		Delete)	
+            deleteRow
 		break;;
 
 		Drop)
