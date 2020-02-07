@@ -143,10 +143,20 @@ function insert {
 
 	if [ $command = 'insert' ] && [ $into = 'into' ] && [ $values = 'values' ]
 	then
-		for (( x=1; x<=${#array[@]}; x++ ))
-        do
-			printf "%s\n" "${array[$x-1]}"
-        done
+			values=$(echo $array | sed -e 's/(/ /g' -e 's/,/ /g' -e 's/)/ /g');
+			read -a arr <<< $values;
+
+			printf "\n" >> $file;
+
+			for (( i=1; i<=${#arr[@]}; i++ ))
+			do
+				if [ $i -eq ${#arr[@]} ]
+				then
+					printf ${arr[$i-1]} >> $file;
+				else
+					printf ${arr[$i-1]}"|" >> $file;
+				fi
+			done
 	else
 		echo "Syntax error!";
 		insert;
