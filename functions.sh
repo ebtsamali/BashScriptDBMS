@@ -92,6 +92,21 @@ function createMetaDataTable {
 	useDB
 }
 
+function checkNewValueValidation {
+	if [[ $1 =~ ^[+-]?[0-9]+$ ]]; then
+	echo "int"
+
+	elif [[ $1 =~ ^[+-]?[0-9]+\.$ ]]; then
+	echo "string"
+
+	elif [[ $1 =~ ^[+-]?[0-9]+\.?[0-9]*$ ]]; then
+	echo "float"
+
+	else
+	echo "string"
+	fi
+}
+
 function validateType {
 	firstLineMetadata=$(head -n 1 $1.metaData) 
 	IFS='|' read -r -a firstLineMetadataArr <<< "$firstLineMetadata"
@@ -99,39 +114,29 @@ function validateType {
 	firstLineData=$(head -n 1 $1.data) 
 	IFS='|' read -r -a firstLineDataArr <<< "$firstLineData"
 
-	if [[ $3 =~ ^[+-]?[0-9]+$ ]]; then
-	type=int
+	rowNum=$(sed -n "/^$4|/=" $1.data)
 
-	elif [[ $3 =~ ^[+-]?[0-9]+\.$ ]]; then
-	type=string
+	rowNumData=$(sed -n "${rowNum}p" $1.data)
+	IFS='|' read -r -a rowNumDataArr <<< "$rowNumData"
 
-	elif [[ $3 =~ ^[+-]?[0-9]+\.?[0-9]*$ ]]; then
-	type=float
-
-	else
-	type=string
-	fi
+	newValueType=$(checkNewValueValidation $3)
 
 	for index in "${!firstLineDataArr[@]}"
 	do
 	    if [ $2 == ${firstLineDataArr[$index]} ]
 	    then
-		
-		echo ${firstLineDataArr[$index]} $2
-		if [[ $type == ${firstLineMetadataArr[$index]} ]]
+		if [[ $newValueType == ${firstLineMetadataArr[$index]} ]]
 		then
-		echo "AA $type ${firstLineMetadataArr[$index]}";
-		    echo "true"
-		    validateRes=1
+		    	echo $newValueType  ${firstLineMetadataArr[$index]} 
+		    oldValue=${rowNumDataArr[$index]} 
+		    ex -sc "${rowNum}s/$oldValue/$3/g" -cx $1.data
+		    echo "$colName updated successfully"
 		else 
-			echo "BB $type ${firstLineMetadataArr[$index]}";
-		    echo "false"
-		    validateRes=0
+			echo $newValueType  ${firstLineMetadataArr[$index]}
+		    echo "ERROR, input value is invalid"
 		fi
 	    fi
 	done
-	echo "res = $validateRes"
-	return $validateRes
 }
 
 function updateTable {
@@ -148,14 +153,9 @@ function updateTable {
 			then
 				if [[ ("$(sed -n "1{/$colName/p};q" ${tableName}.data)")  &&  ("$(sed -n "/^$idNum/p" ${tableName}.data)") ]]
                    		then
-					validateType $tableName $colName $newValue 
-			 		if [ $? == 1 ] 
-					then 
-					    echo "yes"
-					else 
-					    echo "ERROR, input value is invalid"
-					fi
-				else echo "ERROR, $colName not exist or invalid id"
+				    validateType $tableName $colName $newValue $idNum
+				else 
+			   	    echo "ERROR, $colName not exist or invalid id"
 				fi
 			fi
 		done
