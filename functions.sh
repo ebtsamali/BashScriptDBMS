@@ -2,22 +2,22 @@
 
 function createDB {
 	echo "Insert new database name: ";
-	read name;
+	read -e name;
 
 	if [ -d "bashDBMS/databases/$name" ]
-		then
-			echo "database already created";
-		else
-			mkdir -p .bashDBMS/databases/$name;
-		echo "database create successfully";
-    	fi
+	then
+		echo "database already created";
+	else
+		mkdir -p .bashDBMS/databases/$name;
+	echo "database create successfully";
+	fi
     
 }
 
 function renameDB {
 	cd bashDBMS/databases
 	echo "Enter new name : "
-	read newName 
+	read -e newName 
 	mv ./$DBname ./$newName
 	cd ../..
 	echo "Database renamed successfuly"
@@ -40,14 +40,20 @@ function dropDB {
 function listDBs {
     if [ "$(ls -A bashDBMS/databases)" ]
     then
-	cd bashDBMS/databases
-        ls .
-	echo "choose database : "
-	read DBname
+		ls bashDBMS/databases;
+		echo "choose database : "
+		read -e DBname
+
+		if [ -d bashDBMS/databases/$DBname ]
+		then
+			useDB;
+		else
+			echo "database does not exist";
+			listDBs;
+		fi
     else
         echo "No databases available";
     fi
-    cd ../..
 }
 
 # function createMetaDataTable {
@@ -112,7 +118,7 @@ function validateType {
 function updateTable {
 	cd bashDBMS/databases/$DBname
 	printf "write update command by using id condition : "	
-	read update tableName Set colName equal newValue where Id equal idNum
+	read -e update tableName Set colName equal newValue where Id equal idNum
 	if [[ $update == "update" && $Set == "set" && $equal == "=" && $where == "where" && $Id == "id" ]]
 	then 
 		tablesNameArr=($(ls *data | cut -d"." -f1))
@@ -145,7 +151,7 @@ function updateTable {
 function deleteRow {
     cd bashDBMS/databases/$DBname
 	printf "write delete command by using id condition : "	
-	read delete from tableName where Id equal idNum
+	read -e delete from tableName where Id equal idNum
 	if [[ $delete == "delete" && $from == "from" && $equal == "=" && $where == "where" && $Id == "id" ]]
 	then 
         tablesNameArr=($(ls *data | cut -d"." -f1))
@@ -182,7 +188,7 @@ function dropTable {
 	echo $DBname
 	ls *data | cut -d"." -f1
 	echo "choose table name : "
-	read tableName
+	read -e tableName
 	rm $tableName.*
 	cd ../../..
 	echo "$tableName removed successfuly"
@@ -192,7 +198,7 @@ function dropTable {
 function renameDB {
 	cd bashDBMS/databases
 	echo "Enter new name : "
-	read newName 
+	read -e newName 
 	mv ./$DBname ./$newName
 	cd ../..
 	echo "Database renamed successfuly"
@@ -203,7 +209,7 @@ function createTable {
 	typeArr=(int double decimal float bigint boolean date time datetime timestamp varchar text char)
 
     echo "Insert table name: ";
-    read table;
+    read -e table;
 
     file=bashDBMS/databases/$DBname/$table.data;
 	metaData=bashDBMS/databases/$DBname/$table.metaData;
@@ -217,27 +223,38 @@ function createTable {
 	    echo "table created successfully";
 
         echo "Insert number of table columns: ";
-        read number;
+        read -e number;
         
         for (( i=1; i<=$number; i++ ))
         do
             echo "Enter name and type of column $i : "
-			read colName colType;
-			cols[$i-1]=$colName;
+			read -e colName colType;
 
-			for (( j=0; j<${#typeArr[@]}; j++ ))
-			do
-					if [[ ${typeArr[$j]} == $colType ]]
-					then
-					if [[ $i == $(expr $number) ]]
-					then
-						printf ${colType} >> $metaData
+			if [ $colName ] && [ $colType ]
+			then 
+				cols[$i-1]=$colName;
 
-						else printf ${colType}"|" >> $metaData
-					fi
-						
-					fi
-			done
+				for (( j=0; j<${#typeArr[@]}; j++ ))
+				do
+						if [[ ${typeArr[$j]} == $colType ]]
+						then
+						if [[ $i == $(expr $number) ]]
+						then
+							printf ${colType} >> $metaData
+
+							else printf ${colType}"|" >> $metaData
+						fi
+							
+						fi
+				done
+			else
+				echo "Insert column name and it is data type";
+				rm $file $metaData;
+				createTable;
+				return;
+			fi
+
+			
         done
 
 		
@@ -252,13 +269,11 @@ function createTable {
         done
 	    
     fi
-	cd ../../..
-	useDB;
 }
 
 function insert {
 	echo "Write your insert query: ";
-	read command into table values array;
+	read -e command into table values array;
 
 	file=bashDBMS/databases/$DBname/$table.data;
 	metaData=bashDBMS/databases/$DBname/$table.metaData;
@@ -319,14 +334,46 @@ function insert {
 	fi
 }
 
+function selectAll {
+	echo "Write your select query: ";
+	read -e command col from table;
+	file=bashDBMS/databases/$DBname/$table.data;
+	
+	if [ $command = "select" ] && [ $from = "from" ]
+	then
+		if [ $col = "all" ]
+		then
+			printf "\n";
+			cat $file;
+			printf "\n\n";
+		else
+			headers=($(head -n 1 $file | sed -e 's/|/ /g'));
+
+			for (( k=1; k<=${#headers[@]}; k++ ))
+			do
+				if [ $col == ${headers[$k-1]} ] 
+				then
+					awk -F "|" -v a="$k" '{print $a}' $file;
+				fi
+			done
+		fi
+	else
+		echo "Syntax error!";
+		selectAll;
+	fi
+	
+}
+
 function useDB {
 	select choice in List Select Create Insert Update Delete Drop Return Exit
 	do
 	   case $choice in 
-		List) 	
+		List)
+			 	
 		break;;
 
 		Select)	
+			selectAll
 		break;;
 
 		Create)
@@ -358,10 +405,12 @@ function useDB {
 		break;;
 	   esac
 	done
+
+	useDB;
 }
 
 function mainList {
-	PS3="Select or Create DB > "
+	PS3="Select or Create DSelect or Create DBB > "
 
 	select choice in Select-DB Create-DB 
 	do
@@ -374,7 +423,6 @@ function mainList {
 			Use-DB) 
 			  listDBs
 			  PS3="Choose the command $ "
-			  useDB
 			break;;
 
 			Rename-DB)
