@@ -185,7 +185,6 @@ function deleteRow {
 
 function dropTable {
 	cd bashDBMS/databases/$DBname
-	echo $DBname
 	ls *data | cut -d"." -f1
 	echo "choose table name : "
 	read -e tableName
@@ -369,7 +368,7 @@ function useDB {
 	do
 	   case $choice in 
 		List)
-			 	
+			listTables;	
 		break;;
 
 		Select)	
@@ -385,25 +384,25 @@ function useDB {
 		break;;
 	
 		Update)
-		   updateTable	
+			updateTable	
 		break;;
 
 		Delete)	
-            deleteRow
+			deleteRow
 		break;;
 
 		Drop)
-		   dropTable	
+			dropTable	
 		break;;
 	
 		Return)	
-		   mainList
+			mainList
 		break;;
 
 		Exit)
-		   exit	
+			exit	
 		break;;
-	   esac
+	    esac
 	done
 
 	useDB;
@@ -431,8 +430,8 @@ function mainList {
 			break;;
 
 			Drop-DB)
-		     	  listDBs
-			  dropDB	
+		     	listDBs
+			  	dropDB	
 			break;;
 		    esac
 		  done
