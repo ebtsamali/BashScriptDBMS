@@ -4,11 +4,11 @@ function createDB {
 	echo "Insert new database name: ";
 	read name;
 
-	if [ -d "/bashDBMS/databases/$name" ]
+	if [ -d "bashDBMS/databases/$name" ]
 		then
 			echo "database already created";
 		else
-			mkdir -p ./bashDBMS/databases/$name;
+			mkdir -p .bashDBMS/databases/$name;
 		echo "database create successfully";
     	fi
     
@@ -50,67 +50,30 @@ function listDBs {
     cd ../..
 }
 
-function listTables {
-    cd bashDBMS/databases/$DBname
-	ls *data | cut -d"." -f1
-    cd ../../..
-    useDB
-}
+# function createMetaDataTable {
 
-function createMetaDataTable {
-	typeArr=(int double decimal float bigint boolean date time datetime timestamp varchar text char)
-	echo "Enter table name : "
-	read newTableName
+# 	if [ -e ${newTableName}.metaData ]; then
+# 	    echo "table already created";
+# 	    cd ../../..
+# 	else 
+	    
+# 	fi
+
 	
-	cd bashDBMS/databases/$DBname
-
-	if [ -e ${newTableName}.metaData ]; then
-	    echo "table already created";
-	    cd ../../..
-	else 
-	    touch ${newTableName}.metaData
-	    echo "table created successfully"
-
-	    echo "Number of column : "
-	    read columnNumber
-
-	    for (( i = 0; i<${columnNumber}; i++ ))
-	    do
-		echo "Enter name and type of column $i : "
-		read colName colType
-		for (( j=0; j<${#typeArr[@]}; j++ ))
-		do
-		    	if [[ ${typeArr[$j]} == $colType ]]
-		    	then
-				if [[ $i == $(expr $columnNumber - 1) ]]
-				then
-					printf ${colType} >> ${newTableName}.metaData
-
-					else printf ${colType}"|" >> ${newTableName}.metaData
-				fi
-		      		
-		    	fi
-		done
-
-	    done
-	    cd ../../..
-	fi
-
-	useDB
-}
+# }
 
 function checkNewValueValidation {
 	if [[ $1 =~ ^[+-]?[0-9]+$ ]]; then
 	echo "int"
 
 	elif [[ $1 =~ ^[+-]?[0-9]+\.$ ]]; then
-	echo "string"
+	echo "varchar"
 
 	elif [[ $1 =~ ^[+-]?[0-9]+\.?[0-9]*$ ]]; then
 	echo "float"
 
 	else
-	echo "string"
+	echo "varchar"
 	fi
 }
 
@@ -226,7 +189,7 @@ function dropTable {
 }
 
 function renameDB {
-	cd /bashDBMS/databases
+	cd bashDBMS/databases
 	echo "Enter new name : "
 	read newName 
 	mv ./$DBname ./$newName
@@ -236,24 +199,44 @@ function renameDB {
 }
 
 function createTable {
+	typeArr=(int double decimal float bigint boolean date time datetime timestamp varchar text char)
+
     echo "Insert table name: ";
     read table;
 
-    file=/bashDBMS/databases/$DBname/$table.data;
+    file=bashDBMS/databases/$DBname/$table.data;
+	metaData=bashDBMS/databases/$DBname/$table.metaData;
 
-    if [ -f $file ]
+	if [ -f $file ]
     then
         echo "Table is already created!";
     else       
-        touch $file;
+        touch $file $metaData;
+
+	    echo "table created successfully";
 
         echo "Insert number of table columns: ";
         read number;
         
         for (( i=1; i<=$number; i++ ))
         do
-            echo "Insert $i column: ";
-            read cols[$i-1];
+            echo "Enter name and type of column $i : "
+			read colName colType;
+			cols[$i-1]=$colName;
+
+			for (( j=0; j<${#typeArr[@]}; j++ ))
+			do
+					if [[ ${typeArr[$j]} == $colType ]]
+					then
+					if [[ $i == $(expr $number) ]]
+					then
+						printf ${colType} >> $metaData
+
+						else printf ${colType}"|" >> $metaData
+					fi
+						
+					fi
+			done
         done
 
 		
@@ -266,21 +249,69 @@ function createTable {
             	echo -n ${cols[$i-1]}"|" >> $file;
 			fi
         done
+	    
     fi
+	cd ../../..
+	useDB;
 }
 
 function insert {
 	echo "Write your insert query: ";
 	read command into table values array;
 
-	file=/bashDBMS/databases/$DBname/$table.data;
+	file=bashDBMS/databases/$DBname/$table.data;
+	metaData=bashDBMS/databases/$DBname/$table.metaData;
+
+	types=($(head -n 1 $metaData | sed -e 's/|/ /g'));
 
 	if [ $command = 'insert' ] && [ $into = 'into' ] && [ $values = 'values' ]
 	then
-		for (( x=1; x<=${#array[@]}; x++ ))
-        do
-			printf "%s\n" "${array[$x-1]}"
-        done
+		cd bashDBMS/databases/$DBname;
+		tablesNameArr=($(ls *data | cut -d"." -f1));
+		cd ../../..;
+
+		for (( j=0; j<${#tablesNameArr[@]}; j++ ))
+		do
+			if [[ ${tablesNameArr[$j]} == $table ]]
+			then
+				values=$(echo $array | sed -e 's/(/ /g' -e 's/,/ /g' -e 's/)/ /g');
+				read -a arr <<< $values;
+
+				printf "\n" >> $file;
+
+				error=0;
+				for (( i=1; i<=${#arr[@]}; i++ ))
+				do
+					if [ ${types[$i-1]} = $(checkNewValueValidation ${arr[$i-1]}) ]
+					then
+						if [ $i -eq ${#arr[@]} ]
+						then
+							printf ${arr[$i-1]} >> $file;
+						else
+							printf ${arr[$i-1]}"|" >> $file;
+						fi
+					else
+						if [ $error -eq 0 ]
+						then
+							index=$i;
+						fi
+						error+=1;
+					fi
+				done
+
+				if [ $error -gt 0 ]
+				then
+					sed -i '$d' $file;
+					echo "Error: check value $index datatype";
+					insert;
+				fi
+
+			fi
+		done
+
+		if [[ ! " ${tablesNameArr[@]} " =~ " ${table} " ]]; then
+				echo "ERROR, $table table does not exist in database"
+		fi
 	else
 		echo "Syntax error!";
 		insert;
@@ -298,9 +329,9 @@ function useDB {
             Select)	
             break;;
 
-            Create)
-                createMetaDataTable	
-            break;;
+		Create)
+		   createTable	
+		break;;
 
             Insert)	
                 insert;
