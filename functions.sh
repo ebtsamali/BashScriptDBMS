@@ -50,6 +50,13 @@ function listDBs {
     cd ../..
 }
 
+function listTables {
+    cd bashDBMS/databases/$DBname
+	ls *data | cut -d"." -f1
+    cd ../../..
+    useDB
+}
+
 function createMetaDataTable {
 	typeArr=(int double decimal float bigint boolean date time datetime timestamp varchar text char)
 	echo "Enter table name : "
@@ -209,7 +216,6 @@ function deleteRow {
 
 function dropTable {
 	cd bashDBMS/databases/$DBname
-	echo $DBname
 	ls *data | cut -d"." -f1
 	echo "choose table name : "
 	read tableName
@@ -284,41 +290,42 @@ function insert {
 function useDB {
 	select choice in List Select Create Insert Update Delete Drop Return Exit
 	do
-	   case $choice in 
-		List) 	
-		break;;
+	    case $choice in 
+            List) 	
+                listTables;
+            break;;
 
-		Select)	
-		break;;
+            Select)	
+            break;;
 
-		Create)
-		   createMetaDataTable	
-		break;;
+            Create)
+                createMetaDataTable	
+            break;;
 
-		Insert)	
-			insert;
-		break;;
-	
-		Update)
-		   updateTable	
-		break;;
+            Insert)	
+                insert;
+            break;;
+        
+            Update)
+                updateTable	
+            break;;
 
-		Delete)	
-            deleteRow
-		break;;
+            Delete)	
+                deleteRow
+            break;;
 
-		Drop)
-		   dropTable	
-		break;;
-	
-		Return)	
-		   mainList
-		break;;
+            Drop)
+                dropTable	
+            break;;
+        
+            Return)	
+                mainList
+            break;;
 
-		Exit)
-		   exit	
-		break;;
-	   esac
+            Exit)
+                exit	
+            break;;
+	    esac
 	done
 }
 
@@ -328,34 +335,34 @@ function mainList {
 	select choice in Select-DB Create-DB 
 	do
 	case $choice in 
-	  Select-DB) 
-		PS3="Use, Rename or Drop DB : "
-		select choice in Use-DB Rename-DB Drop-DB
-		  do
-		    case $choice in 
-			Use-DB) 
-			  listDBs
-			  PS3="Choose the command $ "
-			  useDB
-			break;;
+	    Select-DB) 
+            PS3="Use, Rename or Drop DB : "
+            select choice in Use-DB Rename-DB Drop-DB
+            do
+                case $choice in 
+                    Use-DB) 
+                        listDBs
+                        PS3="Choose the command $ "
+                        useDB
+                    break;;
 
-			Rename-DB)
-			  listDBs
-			  renameDB
-			break;;
+                    Rename-DB)
+                        listDBs
+                        renameDB
+                    break;;
 
-			Drop-DB)
-		     	  listDBs
-			  dropDB	
-			break;;
-		    esac
-		  done
-	  break;;
+                    Drop-DB)
+                        listDBs
+                        dropDB	
+                    break;;
+                esac
+            done
+	    break;;
 
-	  Create-DB)
-		createDB
-		mainList
-	  break;;
+	    Create-DB)
+            createDB
+            mainList
+	    break;;
 
 	esac
 	done
