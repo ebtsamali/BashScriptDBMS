@@ -41,7 +41,7 @@ function listDBs {
     if [ "$(ls -A bashDBMS/databases)" ]
     then
 		ls bashDBMS/databases;
-		echo "choose database : "
+		echo "select database : "
 		read -e DBname
 
 		if [ -d bashDBMS/databases/$DBname ]
@@ -103,16 +103,21 @@ function validateType {
 	    then
 		if [[ $newValueType == ${firstLineMetadataArr[$index]} ]]
 		then
-		    	echo $newValueType  ${firstLineMetadataArr[$index]} 
 		    oldValue=${rowNumDataArr[$index]} 
 		    ex -sc "${rowNum}s/$oldValue/$3/g" -cx $1.data
 		    echo "$colName updated successfully"
 		else 
-			echo $newValueType  ${firstLineMetadataArr[$index]}
 		    echo "ERROR, input value is invalid"
 		fi
 	    fi
 	done
+}
+
+function listTables {
+    cd bashDBMS/databases/$DBname
+	ls *data | cut -d"." -f1
+    cd ../../..
+    useDB
 }
 
 function updateTable {
@@ -186,7 +191,7 @@ function deleteRow {
 function dropTable {
 	cd bashDBMS/databases/$DBname
 	ls *data | cut -d"." -f1
-	echo "choose table name : "
+	echo "select table name : "
 	read -e tableName
 	rm $tableName.*
 	cd ../../..
@@ -323,7 +328,7 @@ function insert {
 
 			fi
 		done
-
+		echo "Data inserted successfully";
 		if [[ ! " ${tablesNameArr[@]} " =~ " ${table} " ]]; then
 				echo "ERROR, $table table does not exist in database"
 		fi
@@ -364,6 +369,7 @@ function selectAll {
 }
 
 function useDB {
+	PS3="select command : "
 	select choice in List Select Create Insert Update Delete Drop Return Exit
 	do
 	   case $choice in 
@@ -409,7 +415,7 @@ function useDB {
 }
 
 function mainList {
-	PS3="Select or Create DSelect or Create DBB > "
+	PS3="Select or Create DB > "
 
 	select choice in Select-DB Create-DB 
 	do
@@ -421,7 +427,7 @@ function mainList {
 		    case $choice in 
 			Use-DB) 
 			  listDBs
-			  PS3="Choose the command $ "
+			  PS3="select the command $ "
 			break;;
 
 			Rename-DB)
